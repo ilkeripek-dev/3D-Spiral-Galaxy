@@ -64,12 +64,17 @@
             transform: translateY(-2px);
         }
 
-        .ai-btn:active {
-            transform: translateY(0);
+        .ai-btn.settings {
+            border-color: #ffa500;
+            color: #ffa500;
+        }
+        .ai-btn.settings:hover {
+            background: rgba(255, 165, 0, 0.2);
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
         }
 
-        /* Sonuç Modalı Stilleri */
-        #result-modal {
+        /* Ortak Modal Stilleri */
+        .modal {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -123,6 +128,32 @@
 
         .close-btn:hover {
             color: white;
+        }
+
+        /* Input Stilleri */
+        .api-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4db8ff;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        
+        .save-btn {
+            width: 100%;
+            padding: 10px;
+            background: #4db8ff;
+            border: none;
+            color: black;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-btn:hover {
+            background: #7eccff;
         }
 
         .loading-spinner {
@@ -187,6 +218,9 @@
 
     <!-- AI Kontrol Paneli -->
     <div id="ai-panel">
+        <button class="ai-btn settings" id="btn-settings">
+            <span>🔑</span> API Anahtarı
+        </button>
         <button class="ai-btn" id="btn-story">
             <span>✨</span> Galaksi Hikayesi Oluştur
         </button>
@@ -199,13 +233,30 @@
     </div>
 
     <!-- Sonuç Modalı -->
-    <div id="result-modal">
+    <div id="result-modal" class="modal">
         <div class="modal-header">
             <span class="modal-title" id="modal-title">AI Analizi</span>
             <button class="close-btn" id="modal-close">&times;</button>
         </div>
         <div id="result-content">
             <!-- İçerik buraya gelecek -->
+        </div>
+    </div>
+
+    <!-- Ayarlar (API Key) Modalı -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-header">
+            <span class="modal-title" style="color: #ffa500;">API Kurulumu</span>
+            <button class="close-btn" id="settings-close">&times;</button>
+        </div>
+        <div style="font-size: 0.9rem; margin-bottom: 15px;">
+            Gemini API özelliklerini kullanmak için anahtarınızı girin. 
+            <br><span style="color: #888; font-size: 0.8rem;">(Tarayıcınızda güvenle saklanır)</span>
+        </div>
+        <input type="password" id="api-key-input" class="api-input" placeholder="AIza... ile başlayan anahtarınızı yapıştırın">
+        <button id="save-api-key" class="save-btn">Kaydet ve Başla</button>
+        <div style="margin-top: 10px; font-size: 0.8rem; color: #aaa;">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #4db8ff;">Anahtarın yok mu? Buradan al.</a>
         </div>
     </div>
 
@@ -335,31 +386,59 @@
 
         tick();
 
-        // --- 4. GEMINI API ENTEGRASYONU ---
+        // --- 4. GÜVENLİ GEMINI API ENTEGRASYONU ---
 
-        // API Anahtarı (Çalışma ortamı tarafından sağlanır)
-        const apiKey = "AIzaSyDHn8XTDKFhphRp6Q-W7Xfl6ZAzihTU_bw"; 
+        // DEĞİŞİKLİK: Artık API Key'i koddan almıyoruz. LocalStorage'dan alacağız.
+        let apiKey = localStorage.getItem("gemini_api_key");
         
-        const modal = document.getElementById('result-modal');
+        const resultModal = document.getElementById('result-modal');
+        const settingsModal = document.getElementById('settings-modal');
         const modalContent = document.getElementById('result-content');
         const modalTitle = document.getElementById('modal-title');
-        const modalClose = document.getElementById('modal-close');
+        
         const btnStory = document.getElementById('btn-story');
         const btnExplore = document.getElementById('btn-explore');
         const btnSignal = document.getElementById('btn-signal');
+        const btnSettings = document.getElementById('btn-settings');
+        
+        const apiKeyInput = document.getElementById('api-key-input');
+        const btnSaveKey = document.getElementById('save-api-key');
 
-        // Modal Kapatma
-        modalClose.addEventListener('click', () => {
-            modal.style.display = 'none';
+        // Modal Kapatma Fonksiyonları
+        document.getElementById('modal-close').addEventListener('click', () => resultModal.style.display = 'none');
+        document.getElementById('settings-close').addEventListener('click', () => settingsModal.style.display = 'none');
+
+        // Ayarlar Butonu
+        btnSettings.addEventListener('click', () => {
+            apiKeyInput.value = apiKey || ""; // Varsa göster
+            settingsModal.style.display = 'block';
+        });
+
+        // API Key Kaydetme
+        btnSaveKey.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if(key) {
+                localStorage.setItem("gemini_api_key", key);
+                apiKey = key;
+                settingsModal.style.display = 'none';
+                alert("Anahtar kaydedildi! Artık özellikleri kullanabilirsiniz.");
+            } else {
+                alert("Lütfen geçerli bir anahtar girin.");
+            }
         });
 
         // Gemini API Çağırma Fonksiyonu
         async function callGeminiAPI(prompt) {
-            // Yükleniyor göstergesi
-            modalContent.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="loading-spinner"></div><br>Veriler işleniyor...</div>';
-            modal.style.display = 'block';
+            // GÜVENLİK KONTROLÜ: Anahtar var mı?
+            if (!apiKey) {
+                settingsModal.style.display = 'block'; // Yoksa ayarlar penceresini aç
+                return;
+            }
 
-            const systemPrompt = "Sen yaratıcı bir bilim kurgu yazarı ve astronomi uzmanısın. Kullanıcının görselleştirdiği galaksi hakkında kısa, ilgi çekici ve atmosferik açıklamalar yazıyorsun. Cevapların Türkçe olsun.";
+            modalContent.innerHTML = '<div style="text-align:center; padding: 20px;"><div class="loading-spinner"></div><br>Uzaydan veri alınıyor...</div>';
+            resultModal.style.display = 'block';
+
+            const systemPrompt = "Sen yaratıcı bir bilim kurgu yazarı ve astronomi uzmanısın. Cevapların Türkçe olsun.";
 
             try {
                 const response = await fetch(
@@ -376,27 +455,21 @@
                     }
                 );
 
-                if (!response.ok) throw new Error("API Bağlantı Hatası");
+                if (!response.ok) throw new Error("API Hatası");
 
                 const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Bir hata oluştu, cevap alınamadı.";
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sinyal koptu.";
                 
-                // Markdown temizleme (basit) ve formatlama
                 const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-                
-                // Daktilo efekti ile yazdırma
                 typeWriterEffect(formattedText, modalContent);
 
             } catch (error) {
                 console.error(error);
-                modalContent.innerHTML = '<span style="color: #ff4d4d;">Hata: AI servisine ulaşılamadı. Lütfen daha sonra tekrar deneyin.</span>';
+                modalContent.innerHTML = '<span style="color: #ff4d4d;">Hata: API Anahtarı geçersiz veya kota doldu.<br>Lütfen ayarlardan anahtarınızı kontrol edin.</span>';
             }
         }
 
-        // Basit Daktilo Efekti
         function typeWriterEffect(htmlText, element) {
-            element.innerHTML = "";
-            let i = 0;
             element.innerHTML = htmlText; 
             element.style.opacity = 0;
             let opacity = 0;
@@ -409,51 +482,31 @@
 
         // --- BUTON OLAYLARI ---
 
-        // 1. Galaksi Hikayesi Oluştur
         btnStory.addEventListener('click', () => {
             modalTitle.innerText = "Galaktik Veri Günlüğü";
-            
-            // Mevcut galaksi parametrelerine göre dinamik prompt oluştur
-            const colorDesc = parameters.insideColor === '#ff6030' ? "turuncu/kızıl" : "farklı renkli";
-            const armDesc = parameters.branches + " kollu";
-            const chaosDesc = parameters.randomness > 0.5 ? "kaotik ve dağınık" : "düzenli ve simetrik";
-
-            const prompt = `Ekranda ${armDesc}, merkezi ${colorDesc} renkte, yapısı ${chaosDesc} olan bir spiral galaksi var. 
-            1. Bu galaksiye havalı ve bilim kurgusal bir isim ver.
-            2. Bu galaksinin kısa bir tarihçesini veya mitolojisini yaz (maksimum 80 kelime).
-            3. Galaksideki baskın bir medeniyet türünden kısaca bahset.`;
-
+            const prompt = `Ekranda ${parameters.branches} kollu, ${parameters.insideColor} merkezli bir galaksi var. Buna isim ver, tarihini anlat ve medeniyetinden bahset.`;
             callGeminiAPI(prompt);
         });
 
-        // 2. Yıldız Sistemi Keşfet
         btnExplore.addEventListener('click', () => {
             modalTitle.innerText = "Sistem Taraması";
-            
-            // Rastgele bir koordinat "uydur"
-            const sector = Math.floor(Math.random() * 9000) + 1000;
-            const quadrant = ["Alpha", "Beta", "Gamma", "Delta"][Math.floor(Math.random() * 4)];
-
-            const prompt = `Bu galaksinin ${quadrant} çeyreğinde, Sektör ${sector}'de bulunan tekil bir yıldız sistemini tara.
-            1. Sistemin adını ve ana yıldızın tipini (Kızıl Dev, Beyaz Cüce vb.) söyle.
-            2. Sistemdeki en ilginç gezegeni detaylı anlat (atmosferi, yüzey koşulları).
-            3. Varsa buradaki yaşam formunu veya anomaliyi tarif et.
-            Kısa, gizemli ve keşif odaklı bir dil kullan.`;
-
+            const prompt = `Galaksinin rastgele bir sektöründeki tekil bir yıldız sistemini tara. Gezegenleri ve yaşamı anlat.`;
             callGeminiAPI(prompt);
         });
 
-        // 3. Sinyal Yakala (Yeni Özellik)
         btnSignal.addEventListener('click', () => {
-            modalTitle.innerText = "Şifreli Mesaj Alındı";
-            
-            const prompt = `Sen bu galaksideki gizli veya kadim bir medeniyetin iletişimcisisin. Bizimle (Dünya) ilk teması kuruyorsun.
-            1. Bize kısa, şifreli, biraz felsefi veya uyarıcı bir mesaj gönder.
-            2. Mesajın geldiği koordinatı uydur.
-            3. Mesajın tonu gizemli olsun.`;
-
+            modalTitle.innerText = "Şifreli Mesaj";
+            const prompt = `Bize gizemli, şifreli bir uzaylı mesajı gönder.`;
             callGeminiAPI(prompt);
         });
+
+        // Sayfa açıldığında anahtar yoksa hatırlat
+        if(!apiKey) {
+            setTimeout(() => {
+                // Kullanıcıyı hemen boğmamak için 1 sn sonra ayarlar butonu parlasın/dikkat çeksin
+                btnSettings.style.animation = "pulse 2s infinite";
+            }, 1000);
+        }
 
     </script>
 </body>
