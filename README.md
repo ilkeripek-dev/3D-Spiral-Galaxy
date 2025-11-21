@@ -18,7 +18,7 @@ Bu proje, **Three.js** kullanılarak oluşturulmuş etkileşimli bir spiral gala
 - [Three.js](https://threejs.org/)
 - [Google Gemini API](https://ai.google.dev/)
 
-## aNasıl Çalıştırılır?
+## Nasıl Çalıştırılır?
 
 1. Bu repoyu klonlayın veya indirin.
 2. `index.html` dosyasını bir kod editöründe açın.
