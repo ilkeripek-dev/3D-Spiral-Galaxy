@@ -2,6 +2,8 @@
 
 Bu proje, **Three.js** kullanılarak oluşturulmuş etkileşimli bir spiral galaksi simülasyonudur. **Google Gemini API** entegrasyonu sayesinde, oluşturulan galaksi hakkında bilim kurgu hikayeleri yazabilir ve hayali yıldız sistemlerini keşfedebilirsiniz.
 
+Canlı link: https://ilkeripek-dev.github.io/3D-Spiral-Galaxy/
+
 ## 🚀 Özellikler
 
 - **3D Görselleştirme:** 80.000+ parçacık ile prosedürel olarak oluşturulmuş galaksi.
@@ -17,12 +19,5 @@ Bu proje, **Three.js** kullanılarak oluşturulmuş etkileşimli bir spiral gala
 - JavaScript (ES6+)
 - [Three.js](https://threejs.org/)
 - [Google Gemini API](https://ai.google.dev/)
-
-## Nasıl Çalıştırılır?
-
-1. Bu repoyu klonlayın veya indirin.
-2. `index.html` dosyasını bir kod editöründe açın.
-3. Kendi Gemini API anahtarınızı `const apiKey = "BURAYA_ANAHTAR_GELECEK";` satırına ekleyin.
-4. Dosyayı tarayıcınızda açın!
 
 ---
